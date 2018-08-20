@@ -14,8 +14,8 @@ let defaultResolveOptions: ResolveOptions = {
 };
 
 export const resetCache = () => {
-    defaultResolveOptions.basePathCache = {};
-}
+  defaultResolveOptions.basePathCache = {};
+};
 
 /**
  * Return a promise that resolves with a windows path to it's corresponding POSIX path in the wsl environment.
@@ -36,7 +36,7 @@ export const windowsToWsl = (
     const [driveLetter, restOfPath] = parseWindowsPath(windowsPath);
     const cachedResult = options.basePathCache[driveLetter];
     if (cachedResult) {
-        return Promise.resolve(joinPath(cachedResult, restOfPath, false));
+      return Promise.resolve(joinPath(cachedResult, restOfPath, false));
     }
     return callWslPathUtil(driveLetter, restOfPath);
   } catch (e) {
@@ -61,7 +61,7 @@ export const wslToWindows = (
     const [driveLetter, restOfPath] = parseLinuxPath(windowsPath);
     const cachedResult = options.basePathCache[driveLetter];
     if (cachedResult) {
-        return Promise.resolve(joinPath(cachedResult, restOfPath, true));
+      return Promise.resolve(joinPath(cachedResult, restOfPath, true));
     }
     return callWslPathUtil(driveLetter, restOfPath, true);
   } catch (e) {
@@ -105,10 +105,8 @@ const callWslPathUtil = (
   restOfPath: FilePath,
   reverse: boolean = false
 ): Promise<FilePath> => {
-
   const wslCall = `${WSL_UTIL} ${reverse ? "-w" : ""} ${driveLetter}`;
   return new Promise<FilePath>((resolve, reject) => {
-
     exec(wslCall, (err, stdout, stderr) => {
       if (err) {
         reject(err);
@@ -131,9 +129,6 @@ function joinPath(
 ) {
   const platformPath = isWindowsPath ? path.win32 : path.posix;
 
-  const result = platformPath.join(
-    platformPath.resolve(basePath),
-    restOfPath
-  );
+  const result = platformPath.join(platformPath.resolve(basePath), restOfPath);
   return result;
 }
