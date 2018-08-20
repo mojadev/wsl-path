@@ -1,5 +1,8 @@
 [![Build Status](https://travis-ci.org/mojadev/wsl-path.svg?branch=master)](https://travis-ci.org/mojadev/wsl-path)
 
+# Status
+Experimental until 1.0.0 - please come back in one, two days :) 
+
 # wsl-path
 
 A small node utlity for converting file paths from POSIX paths in wsl (Windows Subsystem for Linux) to their counterparts in the Windows Filesystem and vice versa.
