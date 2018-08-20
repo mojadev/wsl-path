@@ -1,7 +1,6 @@
-import { exec } from "child_process";
-import { FilePath, ResolveOptions, WindowDrivePath } from "./types";
-import * as path from "path";
-import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
+import { exec } from 'child_process';
+import * as path from 'path';
+import { ResolveOptions, FilePath, WindowDrivePath } from './types';
 
 export const ERROR_FILEPATH_MUST_BE_ABSOLUTE =
   "Can't resolve windows filepath to wsl path: Path must be an absolute windows path";
