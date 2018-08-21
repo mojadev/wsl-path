@@ -1,16 +1,7 @@
 "use strict";
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 var child_process_1 = require("child_process");
-var path = __importStar(require("path"));
-exports.ERROR_FILEPATH_MUST_BE_ABSOLUTE = "Can't resolve windows filepath to wsl path: Path must be an absolute windows path";
-exports.WRONG_POSIX_PATH_ROOT = "Linux path must reside in /mnt/";
+var path_handling_1 = require("./path-handling");
 var WSL_UTIL = "wslpath";
 var defaultResolveOptions = {
     basePathCache: {}
@@ -32,10 +23,10 @@ exports.resetCache = function () {
 exports.windowsToWsl = function (windowsPath, options) {
     if (options === void 0) { options = defaultResolveOptions; }
     try {
-        var _a = parseWindowsPath(windowsPath), driveLetter = _a[0], restOfPath = _a[1];
+        var _a = path_handling_1.parseWindowsPath(windowsPath), driveLetter = _a[0], restOfPath = _a[1];
         var cachedResult = options.basePathCache[driveLetter];
         if (cachedResult) {
-            return Promise.resolve(joinPath(cachedResult, restOfPath, false));
+            return Promise.resolve(path_handling_1.joinPath(cachedResult, restOfPath, false));
         }
         return callWslPathUtil(driveLetter, restOfPath);
     }
@@ -55,10 +46,10 @@ exports.windowsToWsl = function (windowsPath, options) {
 exports.wslToWindows = function (windowsPath, options) {
     if (options === void 0) { options = defaultResolveOptions; }
     try {
-        var _a = parseLinuxPath(windowsPath), driveLetter = _a[0], restOfPath = _a[1];
+        var _a = path_handling_1.parsePosixPath(windowsPath), driveLetter = _a[0], restOfPath = _a[1];
         var cachedResult = options.basePathCache[driveLetter];
         if (cachedResult) {
-            return Promise.resolve(joinPath(cachedResult, restOfPath, true));
+            return Promise.resolve(path_handling_1.joinPath(cachedResult, restOfPath, true));
         }
         return callWslPathUtil(driveLetter, restOfPath, true);
     }
@@ -66,29 +57,49 @@ exports.wslToWindows = function (windowsPath, options) {
         return Promise.reject(e);
     }
 };
-var parseLinuxPath = function (linuxPath) {
-    try {
-        return splitByPattern(/^(\/mnt\/\w)(.*)$/gi, linuxPath);
+/**
+ * Resolve the POSIX path for the given windows path in the wsl environment in a synchronous call.
+ * This calls wslpath for resolving the base path and caches it in the default
+ * resolve options. Subsequent calls with the same base path are then derived from the cache.
+ *
+ * If you do not want this, pass custom ResolveOptions with an empty or custom cache.
+ * @param windowsPath   The windows path to convert to a posix path
+ * @param options       Overwrite the resolver options, e.g. for disabling base caching
+ */
+exports.wslToWindowsSync = function (windowsPath, options) {
+    if (options === void 0) { options = defaultResolveOptions; }
+    var _a = path_handling_1.parsePosixPath(windowsPath), driveLetter = _a[0], restOfPath = _a[1];
+    var cachedResult = options.basePathCache[driveLetter];
+    if (cachedResult) {
+        return path_handling_1.joinPath(cachedResult, restOfPath, true);
     }
-    catch (e) {
-        throw Error(exports.WRONG_POSIX_PATH_ROOT);
-    }
+    return callWslPathUtilSync(driveLetter, restOfPath, true);
 };
-var parseWindowsPath = function (windowsPath) {
-    try {
-        return splitByPattern(/^(\w+:\\)(.*)$/gi, windowsPath);
+/**
+ * Resolve the Windows path for the given POSI path in the wsl environment in a synchronous call.
+ * In case the resolution does not succeed, the Promise rejects with the appropriate error response.
+ *
+ * This calls wslpath(.exe) for resolving the base path and caches it in the default
+ * resolve options. Subsequent calls with the same base path are then derived from the cache.
+ *
+ * If you do not want this, pass custom ResolveOptions with an empty or custom cache.
+ * @param windowsPath   The windows path to convert to a posix path
+ * @param options       Overwrite the resolver options, e.g. for disabling base caching
+ */
+exports.windowsToWslSync = function (windowsPath, options) {
+    if (options === void 0) { options = defaultResolveOptions; }
+    var _a = path_handling_1.parseWindowsPath(windowsPath), driveLetter = _a[0], restOfPath = _a[1];
+    var cachedResult = options.basePathCache[driveLetter];
+    if (cachedResult) {
+        return path_handling_1.joinPath(cachedResult, restOfPath, false);
     }
-    catch (e) {
-        throw Error(exports.ERROR_FILEPATH_MUST_BE_ABSOLUTE);
-    }
+    return callWslPathUtilSync(driveLetter, restOfPath);
 };
-var splitByPattern = function (pattern, path) {
-    var drivePattern = pattern.exec(path);
-    if (!drivePattern) {
-        throw Error("Pattern does not match");
-    }
-    var _a = drivePattern.slice(1), driveLetter = _a[0], restOfPath = _a[1];
-    return [driveLetter, restOfPath];
+var callWslPathUtilSync = function (driveLetter, restOfPath, reverse) {
+    if (reverse === void 0) { reverse = false; }
+    var wslCall = WSL_UTIL + " " + (reverse ? "-w" : "") + " " + driveLetter;
+    var stdout = child_process_1.execSync(wslCall).toString();
+    return parseProcessResult(stdout, driveLetter, restOfPath, reverse);
 };
 var callWslPathUtil = function (driveLetter, restOfPath, reverse) {
     if (reverse === void 0) { reverse = false; }
@@ -102,16 +113,14 @@ var callWslPathUtil = function (driveLetter, restOfPath, reverse) {
                 reject(stderr.trim());
             }
             else {
-                var result = stdout.trim();
-                defaultResolveOptions.basePathCache[result] = driveLetter;
-                defaultResolveOptions.basePathCache[driveLetter] = result;
-                resolve(joinPath(result, restOfPath, reverse));
+                resolve(parseProcessResult(stdout, driveLetter, restOfPath, reverse));
             }
         });
     });
 };
-function joinPath(basePath, restOfPath, isWindowsPath) {
-    var platformPath = isWindowsPath ? path.win32 : path.posix;
-    var result = platformPath.join(platformPath.resolve(basePath), restOfPath);
-    return result;
+function parseProcessResult(stdout, driveLetter, restOfPath, reverse) {
+    var result = stdout.trim();
+    defaultResolveOptions.basePathCache[result] = driveLetter;
+    defaultResolveOptions.basePathCache[driveLetter] = result;
+    return path_handling_1.joinPath(result, restOfPath, reverse);
 }

@@ -1,6 +1,6 @@
 {
   "name": "wsl-path",
-  "version": "1.0.0-rc",
+  "version": "1.0.0",
   "description": "Convert Windows paths to WSL paths and vice versa",
   "main": "dist/index.js",
   "scripts": {
@@ -9,6 +9,7 @@
     "test": "jest",
     "prepublish": "yarn build && yarn test"
   },
+  "homepage": "https://github.com/mojadev/wsl-path",
   "keywords": [
     "WSL",
     "Windows",
