@@ -1,13 +1,17 @@
 import {
   windowsToWsl,
-  ERROR_FILEPATH_MUST_BE_ABSOLUTE,
   wslToWindows,
-  WRONG_POSIX_PATH_ROOT,
-  resetCache
+  resetCache,
+  wslToWindowsSync,
+  windowsToWslSync
 } from "./wsl-path";
-import { exec } from "child_process";
+import { exec, execSync } from "child_process";
+import { ERROR_FILEPATH_MUST_BE_ABSOLUTE, WRONG_POSIX_PATH_ROOT } from "./path-handling";
 
-jest.mock("child_process", () => ({ exec: jest.fn() }));
+jest.mock("child_process", () => ({
+  exec: jest.fn(),
+  execSync: jest.fn()
+}));
 
 describe("WslPath utility", () => {
   beforeEach(() => {
@@ -51,6 +55,25 @@ describe("WslPath utility", () => {
     mockProcessResult("C:\\ ");
 
     const result = await wslToWindows(mountedPath);
+
+    expect(result).toEqual("C:\\Users");
+  });
+
+
+  it("should resolve a valid windows path to a POSIX path with windowsToWslfrom the wsl context with the sync api", () => {
+    const correctPath = "C:\\Users";
+    mockProcessResult("/mnt/c   ");
+
+    const result =  windowsToWslSync(correctPath);
+
+    expect(result).toEqual("/mnt/c/Users");
+  });
+
+  it("should resolve valid wsl paths to windows paths with the sync api", () => {
+    const mountedPath = "/mnt/c/Users";
+    mockProcessResult("C:\\ ");
+
+    const result = wslToWindowsSync(mountedPath);
 
     expect(result).toEqual("C:\\Users");
   });
@@ -112,11 +135,20 @@ function mockProcessResult(
   err: string | null = null
 ) {
   if (process.env.CALL_WSL_PROCESS) {
+    (execSync as any).mockImplementation((_: string) =>
+      require.requireActual("child_process").execSync(_)
+    );
     (exec as any).mockImplementation((_: string, callback: ExecCallback) =>
       require.requireActual("child_process").exec(_, callback)
     );
     return;
   }
+  (execSync as any).mockImplementation((_: string) => {
+    if (stdout) {
+      return stdout;
+    }
+    throw stderr || err;
+  });
   (exec as any).mockImplementation((_: string, callback: ExecCallback) =>
     callback(err, stdout, stderr)
   );

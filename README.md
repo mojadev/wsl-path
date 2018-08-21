@@ -1,8 +1,5 @@
 [![Build Status](https://travis-ci.org/mojadev/wsl-path.svg?branch=master)](https://travis-ci.org/mojadev/wsl-path)
 
-# Status
-Experimental until 1.0.0 - please come back in one, two days :) 
-
 # wsl-path
 
 A small node utlity for converting file paths from POSIX paths in wsl (Windows Subsystem for Linux) to their counterparts in the Windows Filesystem and vice versa.
@@ -34,6 +31,29 @@ Converts a WSL (POSIX) Path to a windows path.
 const mountedPath = "/mnt/c/Users";
 
 const result = await wslToWindows(mountedPath);
+
+expect(result).toEqual("C:\\Users");
+```
+
+### windowsToWslSync(path, options?)
+
+Converts a windows path to a WSL (POSIX) path in a synchronous call.
+
+```
+const correctPath = "C:\\Users";
+
+const result =  windowsToWslSync(correctPath);
+
+expect(result).toEqual("/mnt/c/Users");
+```
+
+### wslToWindowsSync(path, options?)
+Converts a WSL (POSIX) Path to a windows path in a synchronous call.
+
+```
+const mountedPath = "/mnt/c/Users";
+
+const result = wslToWindowsSync(mountedPath);
 
 expect(result).toEqual("C:\\Users");
 ```
