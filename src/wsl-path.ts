@@ -3,7 +3,7 @@ import { exec, execSync } from "child_process";
 import { ResolveOptions, FilePath } from "./types";
 import { parseWindowsPath, joinPath, parsePosixPath } from "./path-handling";
 
-const WSL_UTIL = "wslpath";
+const WSL_UTIL = process.platform === 'win32' ? "wsl wslpath" : "wslpath";
 
 let defaultResolveOptions: ResolveOptions = {
   basePathCache: {}

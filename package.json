@@ -1,6 +1,6 @@
 {
   "name": "wsl-path",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Convert Windows paths to WSL paths and vice versa",
   "main": "dist/index.js",
   "scripts": {
