@@ -42,6 +42,10 @@ export function joinPath(
   isWindowsPath: boolean = false
 ) {
   const platformPath = isWindowsPath ? path.win32 : path.posix;
-
+  if (!isWindowsPath) {
+    restOfPath = restOfPath.replace(/\\/gi, '/');
+  } else {
+    restOfPath = restOfPath.replace(/\//gi, '\\');
+  }
   return platformPath.join(platformPath.resolve(basePath), restOfPath).trim();
 }

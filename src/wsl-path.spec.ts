@@ -3,7 +3,8 @@ import {
   wslToWindows,
   resetCache,
   wslToWindowsSync,
-  windowsToWslSync
+  windowsToWslSync,
+  _setForceRunInWsl
 } from "./wsl-path";
 import { exec, execSync } from "child_process";
 import { ERROR_FILEPATH_MUST_BE_ABSOLUTE, WRONG_POSIX_PATH_ROOT } from "./path-handling";
@@ -18,6 +19,11 @@ describe("WslPath utility", () => {
     jest.resetAllMocks();
     resetCache();
     mockProcessResult(null, "?");
+    _setForceRunInWsl(true);
+  });
+
+  afterEach(() => {
+    _setForceRunInWsl(false);
   });
 
   it("should throw an error on windowsToWsl when the path cannot be resolved", async () => {
@@ -37,6 +43,16 @@ describe("WslPath utility", () => {
     const result = await windowsToWsl(correctPath);
 
     expect(result).toEqual("/mnt/c/Users");
+  });
+
+
+  it("should resolve a valid nested windows path to a POSIX path with windowsToWslfrom the wsl context", async () => {
+    const correctPath = "C:\\Users\\Test";
+    mockProcessResult("/mnt/c   ");
+
+    const result = await windowsToWsl(correctPath);
+
+    expect(result).toEqual("/mnt/c/Users/Test");
   });
 
   it("should throw an error when a non /mnt/* linux path is provided in wslToWindows", async () => {
@@ -59,6 +75,14 @@ describe("WslPath utility", () => {
     expect(result).toEqual("C:\\Users");
   });
 
+  it("should resolve valid nested wsl paths to windows paths", async () => {
+    const mountedPath = "/mnt/c/Users/Test";
+    mockProcessResult("C:\\ ");
+
+    const result = await wslToWindows(mountedPath);
+
+    expect(result).toEqual("C:\\Users\\Test");
+  });
 
   it("should resolve a valid windows path to a POSIX path with windowsToWslfrom the wsl context with the sync api", () => {
     const correctPath = "C:\\Users";
@@ -104,6 +128,7 @@ describe("WslPath utility", () => {
     expect(exec).toHaveBeenCalledTimes(1);
   });
 
+
   it("should retrieve results from the cache as soon as the base path has been resolved (windows -> posix -> windows) ", async () => {
     const mountedPath1 = "C:\\Users";
     const mountedPath2 = "C:\\Test";
@@ -126,6 +151,16 @@ describe("WslPath utility", () => {
     });
 
     expect(result1).toEqual("/mnt/x/Users");
+  });
+
+  it("should run in a wsl shell for windows users", async () => {
+    _setForceRunInWsl(true);
+    const windowsPath = "C:\\Users";
+    mockProcessResult("/mnt/x");
+
+    await windowsToWsl(windowsPath);
+
+    expect((exec as any).mock.calls[0][0]).toEqual("wsl wslpath  C:\\\\");
   });
 });
 

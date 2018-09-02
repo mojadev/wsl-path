@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var child_process_1 = require("child_process");
 var path_handling_1 = require("./path-handling");
 var WSL_UTIL = "wslpath";
+var _forceRunInWsl = undefined;
 var defaultResolveOptions = {
     basePathCache: {}
 };
@@ -98,12 +99,12 @@ exports.windowsToWslSync = function (windowsPath, options) {
 var callWslPathUtilSync = function (driveLetter, restOfPath, reverse) {
     if (reverse === void 0) { reverse = false; }
     var wslCall = WSL_UTIL + " " + (reverse ? "-w" : "") + " " + driveLetter;
-    var stdout = child_process_1.execSync(wslCall).toString();
+    var stdout = child_process_1.execSync(escapeWslCommand(wslCall)).toString();
     return parseProcessResult(stdout, driveLetter, restOfPath, reverse);
 };
 var callWslPathUtil = function (driveLetter, restOfPath, reverse) {
     if (reverse === void 0) { reverse = false; }
-    var wslCall = WSL_UTIL + " " + (reverse ? "-w" : "") + " " + driveLetter;
+    var wslCall = escapeWslCommand(WSL_UTIL + " " + (reverse ? "-w" : "") + " " + driveLetter);
     return new Promise(function (resolve, reject) {
         child_process_1.exec(wslCall, function (err, stdout, stderr) {
             if (err) {
@@ -118,9 +119,23 @@ var callWslPathUtil = function (driveLetter, restOfPath, reverse) {
         });
     });
 };
+function escapeWslCommand(command) {
+    if (!_forceRunInWsl && (process.platform !== 'win32' || _forceRunInWsl === false)) {
+        return command;
+    }
+    return 'wsl ' + command.replace(/\\/g, '\\\\');
+}
 function parseProcessResult(stdout, driveLetter, restOfPath, reverse) {
     var result = stdout.trim();
     defaultResolveOptions.basePathCache[result] = driveLetter;
     defaultResolveOptions.basePathCache[driveLetter] = result;
     return path_handling_1.joinPath(result, restOfPath, reverse);
 }
+/**
+ * Force to run/not run wslpath in a wsl environment.
+ * This is mostyl useful for testing scenarios
+ */
+function _setForceRunInWsl(value) {
+    _forceRunInWsl = value;
+}
+exports._setForceRunInWsl = _setForceRunInWsl;

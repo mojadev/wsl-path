@@ -1,9 +1,9 @@
 import { exec, execSync } from "child_process";
-
 import { ResolveOptions, FilePath } from "./types";
 import { parseWindowsPath, joinPath, parsePosixPath } from "./path-handling";
 
-const WSL_UTIL = process.platform === 'win32' ? "wsl wslpath" : "wslpath";
+const WSL_UTIL = "wslpath";
+let _forceRunInWsl: (boolean | undefined) = undefined;
 
 let defaultResolveOptions: ResolveOptions = {
   basePathCache: {}
@@ -112,7 +112,7 @@ export const windowsToWslSync = (
 
 const callWslPathUtilSync = (driveLetter: FilePath, restOfPath: FilePath, reverse: boolean = false): FilePath => {
   const wslCall = `${WSL_UTIL} ${reverse ? "-w" : ""} ${driveLetter}`;
-  const stdout = execSync(wslCall).toString();
+  const stdout = execSync(escapeWslCommand(wslCall)).toString();
 
   return parseProcessResult(stdout, driveLetter, restOfPath, reverse);
 };
@@ -122,7 +122,8 @@ const callWslPathUtil = (
   restOfPath: FilePath,
   reverse: boolean = false
 ): Promise<FilePath> => {
-  const wslCall = `${WSL_UTIL} ${reverse ? "-w" : ""} ${driveLetter}`;
+  const wslCall = escapeWslCommand(`${WSL_UTIL} ${reverse ? "-w" : ""} ${driveLetter}`);
+
   return new Promise<FilePath>((resolve, reject) => {
     exec(wslCall, (err, stdout, stderr) => {
       if (err) {
@@ -136,10 +137,23 @@ const callWslPathUtil = (
   });
 };
 
+function escapeWslCommand(command: string) {
+  if (!_forceRunInWsl && (process.platform !== 'win32' || _forceRunInWsl === false)) {
+    return command;
+  }
+  return 'wsl ' + command.replace(/\\/g, '\\\\');
+}
+
 function parseProcessResult(stdout: string, driveLetter: string, restOfPath: string, reverse: boolean) {
   const result = stdout.trim();
   defaultResolveOptions.basePathCache[result] = driveLetter;
   defaultResolveOptions.basePathCache[driveLetter] = result;
   return joinPath(result, restOfPath, reverse);
 }
-
+/**
+ * Force to run/not run wslpath in a wsl environment.
+ * This is mostyl useful for testing scenarios
+ */
+export function _setForceRunInWsl(value: boolean): void {
+  _forceRunInWsl = value;
+}

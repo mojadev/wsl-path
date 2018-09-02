@@ -44,3 +44,8 @@ export declare const wslToWindowsSync: (windowsPath: string, options?: ResolveOp
  * @param options       Overwrite the resolver options, e.g. for disabling base caching
  */
 export declare const windowsToWslSync: (windowsPath: string, options?: ResolveOptions) => string;
+/**
+ * Force to run/not run wslpath in a wsl environment.
+ * This is mostyl useful for testing scenarios
+ */
+export declare function _setForceRunInWsl(value: boolean): void;

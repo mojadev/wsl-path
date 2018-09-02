@@ -37,6 +37,12 @@ exports.splitByPattern = function (pattern, path) {
 function joinPath(basePath, restOfPath, isWindowsPath) {
     if (isWindowsPath === void 0) { isWindowsPath = false; }
     var platformPath = isWindowsPath ? path.win32 : path.posix;
+    if (!isWindowsPath) {
+        restOfPath = restOfPath.replace(/\\/gi, '/');
+    }
+    else {
+        restOfPath = restOfPath.replace(/\//gi, '\\');
+    }
     return platformPath.join(platformPath.resolve(basePath), restOfPath).trim();
 }
 exports.joinPath = joinPath;
