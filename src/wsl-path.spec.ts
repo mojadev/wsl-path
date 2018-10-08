@@ -147,7 +147,8 @@ describe("WslPath utility", () => {
     mockProcessResult("/mnt/x");
 
     const result1 = await windowsToWsl(windowsPath, {
-      basePathCache: { "C:\\": "/mnt/x" }
+      basePathCache: { "wsl:C:\\": "/mnt/x" },
+      wslCommand: 'wsl'
     });
 
     expect(result1).toEqual("/mnt/x/Users");
@@ -161,6 +162,16 @@ describe("WslPath utility", () => {
     await windowsToWsl(windowsPath);
 
     expect((exec as any).mock.calls[0][0]).toEqual("wsl wslpath  C:\\\\");
+  });
+
+  it("should allow to set a custom wsl environment when calling", async () => {
+    _setForceRunInWsl(true);
+    const windowsPath = "C:\\Users";
+    mockProcessResult("/mnt/x");
+
+    await windowsToWsl(windowsPath, {wslCommand: 'ubuntu run'});
+
+    expect((exec as any).mock.calls[0][0]).toEqual("ubuntu run wslpath  C:\\\\");
   });
 });
 

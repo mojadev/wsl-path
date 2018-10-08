@@ -22,5 +22,13 @@ export interface ResolveOptions {
      *
      * Static mappings that can be used to resolve paths without calling wslpath.
      */
-    basePathCache: {[base: string]: FilePath}
+    basePathCache?: {[base: string]: FilePath},
+
+    /**
+     * The command to use for the wsl commanline (default is wsl, but this could
+     * also be something like 'ubuntu' or 'bash'). Use this parameter to distinguish
+     * between multiple wsl environments.
+     */
+    wslCommand?: string,
+
 }
