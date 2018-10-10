@@ -1,17 +1,24 @@
 import { exec, execSync } from "child_process";
-import { ResolveOptions, FilePath } from "./types";
-import { parseWindowsPath, joinPath, parsePosixPath } from "./path-handling";
+import {
+  ResolveOptions,
+  FilePath,
+  ResolutionContext,
+  PathCache
+} from "./types";
+import { parseWindowsPath, joinPath, parsePosixPath, splitByPattern } from "./path-handling";
 
 const WSL_UTIL = "wslpath";
+
 let _forceRunInWsl: boolean | undefined = undefined;
 
-let defaultResolveOptions: StrictResolveOptions = {
-  basePathCache: {},
+let inMemoryCacheInstance: PathCache = {};
+
+const defaultResolveOptions: ResolveOptions = {
   wslCommand: "wsl"
 };
 
 export const resetCache = () => {
-  defaultResolveOptions.basePathCache = {};
+  inMemoryCacheInstance = {};
 };
 
 /**
@@ -27,33 +34,9 @@ export const resetCache = () => {
  */
 export const windowsToWsl = (
   windowsPath: FilePath,
-  options: ResolveOptions = defaultResolveOptions
+  options: ResolveOptions = {...defaultResolveOptions}
 ): Promise<FilePath> => {
-  try {
-    const resolveOptions: StrictResolveOptions = {
-      ...options,
-      ...defaultResolveOptions
-    };
-    const [driveLetter, restOfPath] = parseWindowsPath(windowsPath);
-    const cachedResult =
-      resolveOptions.basePathCache[
-        cacheKey(resolveOptions.wslCommand, driveLetter)
-      ];
-    if (cachedResult) {
-      return Promise.resolve(joinPath(cachedResult, restOfPath, false));
-    }
-    return callWslPathUtil(
-      driveLetter,
-      restOfPath,
-      false,
-      options.wslCommand
-    ).then(value => {
-      updateCache(driveLetter, value.basePath, resolveOptions);
-      return value.result;
-    });
-  } catch (e) {
-    return Promise.reject(e);
-  }
+  return resolveAsync(buildWindowsResolutionContext(windowsPath, options));
 };
 
 /**
@@ -67,32 +50,9 @@ export const windowsToWsl = (
  */
 export const wslToWindows = (
   posixPath: FilePath,
-  options: ResolveOptions = defaultResolveOptions
+  options: ResolveOptions = {...defaultResolveOptions}
 ): Promise<FilePath> => {
-  try {
-    const resolveOptions: StrictResolveOptions = {
-      ...options,
-      ...defaultResolveOptions
-    };
-    const [driveLetter, restOfPath] = parsePosixPath(posixPath);
-    const cachedResult =
-      resolveOptions.basePathCache[cacheKey(options.wslCommand, driveLetter)];
-    if (cachedResult) {
-      return Promise.resolve(joinPath(cachedResult, restOfPath, true));
-    }
-
-    return callWslPathUtil(
-      driveLetter,
-      restOfPath,
-      true,
-      options.wslCommand
-    ).then(value => {
-      updateCache(driveLetter, value.basePath, resolveOptions);
-      return value.result;
-    });
-  } catch (e) {
-    return Promise.reject(e);
-  }
+  return resolveAsync(buildPosixResolutionContext(posixPath, options));
 };
 
 /**
@@ -106,25 +66,9 @@ export const wslToWindows = (
  */
 export const wslToWindowsSync = (
   posixPath: FilePath,
-  options: ResolveOptions = defaultResolveOptions
+  options: ResolveOptions = {...defaultResolveOptions}
 ): FilePath => {
-  const resolveOptions = { ...options, ...defaultResolveOptions };
-  const [driveLetter, restOfPath] = parsePosixPath(posixPath);
-  const cachedResult =
-    resolveOptions.basePathCache[
-      cacheKey(resolveOptions.wslCommand, driveLetter)
-    ];
-  if (cachedResult) {
-    return joinPath(cachedResult, restOfPath, true);
-  }
-  const resolveResult = callWslPathUtilSync(
-    driveLetter,
-    restOfPath,
-    true,
-    options.wslCommand
-  );
-  updateCache(driveLetter, resolveResult.basePath, resolveOptions);
-  return resolveResult.result;
+  return resolveSync(buildPosixResolutionContext(posixPath, options));
 };
 
 /**
@@ -140,124 +84,199 @@ export const wslToWindowsSync = (
  */
 export const windowsToWslSync = (
   windowsPath: FilePath,
-  options: ResolveOptions = defaultResolveOptions
+  options: ResolveOptions = {...defaultResolveOptions}
 ): FilePath => {
-  const resolveOptions: StrictResolveOptions = {
-    ...options,
-    ...defaultResolveOptions
-  };
-  const [driveLetter, restOfPath] = parseWindowsPath(windowsPath);
-  const cachedResult =
-    resolveOptions.basePathCache[
-      cacheKey(resolveOptions.wslCommand, driveLetter)
-    ];
+  return resolveSync(buildWindowsResolutionContext(windowsPath, options));
+};
+
+/**
+ * Perform a path resolution for the given @see ResolutionContext in a asynchronous manner.
+ *
+ * @param context The @see ResolutionContext to resolve.
+ */
+const resolveAsync = (context: ResolutionContext): Promise<FilePath> => {
+  const cachedResult = lookupCache(context);
   if (cachedResult) {
-    return joinPath(cachedResult, restOfPath, false);
+    return Promise.resolve(cachedResult);
   }
+  return callWslPathUtil(context).then(result => {
+    const resultContext = buildResolutionContext(result, {});
 
-  const resolveResult = callWslPathUtilSync(
-    driveLetter,
-    restOfPath,
-    false,
-    options.wslCommand
-  );
-  updateCache(driveLetter, resolveResult.basePath, resolveOptions);
-  return resolveResult.result;
+    cacheValue(context, resultContext);
+    return result;
+  });
 };
 
-const callWslPathUtilSync = (
-  driveLetter: FilePath,
-  restOfPath: FilePath,
-  reverse: boolean = false,
-  command: string = "wsl"
-): ResolveResult => {
-  const wslCall = `${WSL_UTIL} ${reverse ? "-w" : ""} ${driveLetter}`;
-  const stdout = execSync(escapeWslCommand(wslCall, command)).toString();
-
-  return {
-    basePath: stdout.trim(),
-    result: parseProcessResult(stdout, restOfPath, reverse)
-  };
+/**
+ * Perform a path resolution for the given @see ResolutionContext in a synchronous manner.
+ *
+ * @param context The @see ResolutionContext to resolve.
+ */
+const resolveSync = (context: ResolutionContext): FilePath => {
+  const cachedResult = lookupCache(context);
+  if (cachedResult) {
+    return cachedResult;
+  }
+  const result = callWslPathUtilSync(context);
+  const resultContext = buildResolutionContext(result, context);
+  cacheValue(context, resultContext);
+  return result;
 };
 
-const callWslPathUtil = (
-  driveLetter: FilePath,
-  restOfPath: FilePath,
-  reverse: boolean = false,
-  command: string = WSL_UTIL
-): Promise<ResolveResult> => {
-  const wslCall = escapeWslCommand(
-    `${WSL_UTIL} ${reverse ? "-w" : ""} ${driveLetter}`,
-    command
-  );
+/**
+ * Execute the wsl path resolution synchronously.
+ *
+ * @param context The @see ResolutionContext to resolve;
+ */
+const callWslPathUtilSync = (context: ResolutionContext): FilePath => {
+  const wslCall = toWslCommand(context);
+  const stdout = execSync(wslCall).toString();
 
-  return new Promise<ResolveResult>((resolve, reject) => {
+  return joinPath(stdout.trim(), context.restOfPath, !context.isWindowsPath);
+};
+
+/**
+ * Execute the wsl path resolution asynchronously.
+ *
+ * @param context The @see ResolutionContext to resolve;
+ */
+const callWslPathUtil = (context: ResolutionContext) => {
+  const wslCall = toWslCommand(context);
+
+  return new Promise<FilePath>((resolve, reject) => {
     exec(wslCall, (err, stdout, stderr) => {
       if (err) {
         reject(err);
       } else if (stderr && !stdout) {
-        reject(stderr.trim());
+        reject((stderr || "").trim());
       } else {
-        return resolve({
-          basePath: stdout.trim(),
-          result: parseProcessResult(stdout, restOfPath, reverse)
-        });
+        resolve(
+          joinPath(stdout.trim(), context.restOfPath, !context.isWindowsPath)
+        );
       }
     });
   });
 };
 
-function escapeWslCommand(command: string, wslShell: string) {
-  if (
-    !_forceRunInWsl &&
-    (process.platform !== "win32" || _forceRunInWsl === false)
-  ) {
-    return command;
+/**
+ * Create the wsl command for resolving the given context.
+ *
+ * @param context The @see ResolutionContext that should be resolved.
+ */
+const toWslCommand = (context: ResolutionContext) => {
+  const baseCommand = `${WSL_UTIL} ${!context.isWindowsPath ? "-w" : ""} ${
+    context.basePath
+  }`;
+  if (process.platform !== "win32" && _forceRunInWsl === false) {
+    return baseCommand;
   }
-  return wslShell + " " + command.replace(/\\/g, "\\\\");
-}
+  return context.wslCommand + " " + baseCommand.replace(/\\/g, "\\\\");
+};
 
-function parseProcessResult(
-  stdout: string,
-  restOfPath: string,
-  reverse: boolean
-) {
-  const result = stdout.trim();
-  return joinPath(result, restOfPath, reverse);
-}
 /**
  * Force to run/not run wslpath in a wsl environment.
- * This is mostyl useful for testing scenarios
+ * This is mostly useful for testing scenarios
  */
-export function _setForceRunInWsl(value: boolean): void {
-  _forceRunInWsl = value;
+export const _setForceRunInWsl = (value: boolean): boolean =>
+  (_forceRunInWsl = value);
+
+/**
+ * Return the cache key used for storing and retrieving the given @see ResolutionContext.
+ *
+ * @param context The context to create the key for.
+ */
+const cacheKey = (context: ResolutionContext): string =>
+  `${context.wslCommand}:${context.basePath}`;
+
+/**
+ * Mark the resultContext as being the resolution result for sourceContext.
+ *
+ * @param sourceContext The @see ResolutionContext defining the resolve input.
+ * @param resultContext The @see ResolutionContext defining the resolve output.
+ */
+const cacheValue = (
+  sourceContext: ResolutionContext,
+  resultContext: ResolutionContext
+) => {
+  // this shouldn't happen, and even if it does so it should not be put in the cache
+  if (sourceContext.isWindowsPath === resultContext.isWindowsPath) {
+    return;
+  }
+  sourceContext.cache[cacheKey(sourceContext)] = resultContext.basePath;
+  sourceContext.cache[cacheKey(resultContext)] = sourceContext.basePath;
+};
+
+/**
+ * Return the result for the given context from the cache if resolution has been already peformed.
+ *
+ * @param context The @see ResolutionContext to lookup
+ */
+const lookupCache = (context: ResolutionContext): FilePath | undefined => {
+  const result = context.cache[cacheKey(context)];
+  if (!result) {
+    return;
+  }
+  return joinPath(result, context.restOfPath, !context.isWindowsPath);
 }
 
-function cacheKey(wslCommand: string | undefined, path: string): string {
-  return (wslCommand || "") + ":" + path;
-}
+/**
+ * Create a new @see ResolutionContext from the given path and parse options.
+ *
+ * @param path    The path to resolve. Can be either POSIX or Windows (see the reverse flag in the result)
+ * @param options The parse options provided by the user.
+ */
+const buildResolutionContext = (
+  path: FilePath,
+  options: ResolveOptions,
+  parser?: (inPath: FilePath) => [FilePath, FilePath]
+): ResolutionContext => {
+  options.basePathCache = options.basePathCache || inMemoryCacheInstance;
+  options.wslCommand = options.wslCommand || "wsl";
 
-function updateCache(
-  sourcePath: FilePath,
-  targetPath: FilePath,
-  options: StrictResolveOptions
-) {
-  options.basePathCache[cacheKey(options.wslCommand, targetPath)] = sourcePath;
-  options.basePathCache[cacheKey(options.wslCommand, sourcePath)] = targetPath;
-}
+  const isWindowsPath = /^\w:\\/i.test(path);
+  const [basePath, restOfPath] = (parser ||
+    (!isWindowsPath ? parsePosixPath : parseWindowsPath))(path);
 
-interface ResolveResult {
-  /**
-   * The base path or drive letter the resolved result resides in.
-   */
-  basePath: FilePath;
-  /**
-   * The complete resolved path.
-   */
-  result: FilePath;
-}
+  return {
+    basePath,
+    restOfPath,
+    isWindowsPath,
+    wslCommand: options.wslCommand,
+    cache: options.basePathCache
+  };
+};
 
-interface StrictResolveOptions {
-  basePathCache: { [base: string]: FilePath };
-  wslCommand: string;
-}
+/**
+ * Stricter version of @see buildResolutionContext which only allows windows paths at path.
+ * Throws an error if a non windows (with drive letter) path is provided
+ *
+ * @param path    The windows file path to create a context for.
+ * @param options The user provided resolution options
+ */
+const buildWindowsResolutionContext = (
+  path: FilePath,
+  options: ResolveOptions
+) => {
+  const context = buildResolutionContext(path, options, parseWindowsPath);
+  if (!context.isWindowsPath) {
+    throw Error("Invalid windows path provided:" + path);
+  }
+  return context;
+};
+/**
+ * Stricter version of @see buildResolutionContext which only allows POSIX paths at path.
+ * Throws an error if a non POSIX path is provided
+ *
+ * @param path    The POSIX file path to create a context for.
+ * @param options The user provided resolution options
+ */
+const buildPosixResolutionContext = (
+  path: FilePath,
+  options: ResolveOptions
+) => {
+  const context = buildResolutionContext(path, options, parsePosixPath);
+  if (context.isWindowsPath) {
+    throw Error("Invalid POSIX path provided:" + path);
+  }
+  return context;
+};

@@ -20,4 +20,10 @@ export interface ResolveOptions {
     basePathCache: {
         [base: string]: FilePath;
     };
+    /**
+     * The command to use for the wsl commanline (default is wsl, but this could
+     * also be something like 'ubuntu' or 'bash'). Use this parameter to distinguish
+     * between multiple wsl environments.
+     */
+    wslCommand?: string;
 }

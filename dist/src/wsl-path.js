@@ -5,7 +5,8 @@ var path_handling_1 = require("./path-handling");
 var WSL_UTIL = "wslpath";
 var _forceRunInWsl = undefined;
 var defaultResolveOptions = {
-    basePathCache: {}
+    basePathCache: {},
+    wslCommand: 'wsl',
 };
 exports.resetCache = function () {
     defaultResolveOptions.basePathCache = {};
@@ -25,7 +26,7 @@ exports.windowsToWsl = function (windowsPath, options) {
     if (options === void 0) { options = defaultResolveOptions; }
     try {
         var _a = path_handling_1.parseWindowsPath(windowsPath), driveLetter = _a[0], restOfPath = _a[1];
-        var cachedResult = options.basePathCache[driveLetter];
+        var cachedResult = options.basePathCache[options.wslCommand + ":" + driveLetter];
         if (cachedResult) {
             return Promise.resolve(path_handling_1.joinPath(cachedResult, restOfPath, false));
         }
@@ -48,7 +49,7 @@ exports.wslToWindows = function (windowsPath, options) {
     if (options === void 0) { options = defaultResolveOptions; }
     try {
         var _a = path_handling_1.parsePosixPath(windowsPath), driveLetter = _a[0], restOfPath = _a[1];
-        var cachedResult = options.basePathCache[driveLetter];
+        var cachedResult = options.basePathCache[options.wslCommand + ":" + driveLetter];
         if (cachedResult) {
             return Promise.resolve(path_handling_1.joinPath(cachedResult, restOfPath, true));
         }

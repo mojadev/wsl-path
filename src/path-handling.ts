@@ -47,5 +47,5 @@ export function joinPath(
   } else {
     restOfPath = restOfPath.replace(/\//gi, '\\');
   }
-  return platformPath.join(platformPath.resolve(basePath), restOfPath).trim();
+  return platformPath.join(basePath, restOfPath).trim();
 }
