@@ -115,7 +115,7 @@ describe("WslPath utility", () => {
     }
   });
 
-  it.only("should retrieve results from the cache as soon as the base path has been resolved (posix -> windows) ", async () => {
+  it("should retrieve results from the cache as soon as the base path has been resolved (posix -> windows) ", async () => {
     const mountedPath1 = "/mnt/c/Users";
     const mountedPath2 = "/mnt/c/Test";
     mockProcessResult("C:\\ ");
@@ -129,7 +129,7 @@ describe("WslPath utility", () => {
   });
 
 
-  it.only("should retrieve results from the cache as soon as the base path has been resolved (windows -> posix -> windows) ", async () => {
+  it("should retrieve results from the cache as soon as the base path has been resolved (windows -> posix -> windows) ", async () => {
     const mountedPath1 = "C:\\Users";
     const mountedPath2 = "C:\\Test";
     mockProcessResult("/mnt/c/");

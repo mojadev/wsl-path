@@ -21,7 +21,7 @@
   "license": "MIT",
   "types": "./dist/index.d.ts",
   "devDependencies": {
-    "@types/jest": "^23.3.1",
+    "@types/jest": "^23.3.5",
     "@types/node": "^10.7.1",
     "jest": "^23.5.0",
     "rimraf": "^2.6.2",

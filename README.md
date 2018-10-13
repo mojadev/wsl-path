@@ -72,6 +72,17 @@ const result1 = await windowsToWsl(windowsPath, {
 expect(result1).toEqual("/mnt/x/Users");
 ```
 
+## Using different wsl enviornments than the default
+
+If you have multiple wsl environments installed, you can use the wslCommand option for setting up the shell that should be used:
+
+```
+const result1 = await windowsToWsl(windowsPath, {
+   wslCommand: 'ubuntu run'
+});
+```
+
+
 ## Building and testing
 
 Install packages:
