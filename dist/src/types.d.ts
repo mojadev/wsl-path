@@ -30,6 +30,10 @@ export interface ResolveOptions {
      * between multiple wsl environments.
      */
     wslCommand?: WslCommand;
+    /**
+     * A list of known mount points from WSL and Windows.
+     */
+    mountPoints?: MountPoint[];
 }
 export declare type PathCache = {
     [key: string]: FilePath;
@@ -60,4 +64,17 @@ export interface ResolutionContext {
     cache: {
         [key: string]: FilePath;
     };
+}
+/**
+ * A mountpoint in the wsl environment
+ */
+export interface MountPoint {
+    /**
+     * The (POSIX) source path.
+     */
+    src: FilePath;
+    /**
+     * The mapped windows drive, if applicable.
+     */
+    target?: WindowDrivePath;
 }
