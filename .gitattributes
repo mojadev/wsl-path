@@ -1,0 +1,4 @@
+*.ts               text=lf
+*.js               text=lf
+*.yml              text=lf
+*.md               text=lf
