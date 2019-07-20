@@ -1,3 +1,4 @@
+import { MountPoint } from "./mount";
 
 
 /**
@@ -35,6 +36,10 @@ export interface ResolveOptions {
      */
     wslCommand?: WslCommand,
 
+    /**
+     * A list of known mount points from WSL and Windows.
+     */
+    mountPoints?: MountPoint[]
 }
 
 export type PathCache = {[key: string]: FilePath};
@@ -63,4 +68,18 @@ export interface ResolutionContext {
      * The cache that must be looked up/populated in order to resolve paths.
      */
     cache: {[key:string]: FilePath}
+}
+
+/**
+ * A mountpoint in the wsl environment
+ */
+export interface MountPoint {
+    /**
+     * The (POSIX) source path.
+     */
+    src: FilePath,
+    /**
+     * The mapped windows drive, if applicable.
+     */
+    target?: WindowDrivePath
 }

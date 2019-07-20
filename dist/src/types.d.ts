@@ -1,3 +1,4 @@
+import { MountPoint } from "./mount";
 /**
  * Textual representation of a system file path.
  */
@@ -30,6 +31,10 @@ export interface ResolveOptions {
      * between multiple wsl environments.
      */
     wslCommand?: WslCommand;
+    /**
+     * A list of known mount points from WSL and Windows.
+     */
+    mountPoints?: MountPoint[];
 }
 export declare type PathCache = {
     [key: string]: FilePath;

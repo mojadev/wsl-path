@@ -3,15 +3,20 @@ import {
   ResolveOptions,
   FilePath,
   ResolutionContext,
-  PathCache
+  PathCache,
+  WslCommand,
+  MountPoint
 } from "./types";
-import { parseWindowsPath, joinPath, parsePosixPath, splitByPattern } from "./path-handling";
+import { parseWindowsPath, joinPath, parsePosixPath } from "./path-handling";
+import { determineMountPoints } from "./mount";
+
 
 const WSL_UTIL = "wslpath";
 
 let _forceRunInWsl: boolean | undefined = undefined;
 
 let inMemoryCacheInstance: PathCache = {};
+let inMemoryMountPathCacheInstance: { [key: string]: MountPoint[] } = {};
 
 const defaultResolveOptions: ResolveOptions = {
   wslCommand: "wsl"
@@ -19,6 +24,7 @@ const defaultResolveOptions: ResolveOptions = {
 
 export const resetCache = () => {
   inMemoryCacheInstance = {};
+  inMemoryMountPathCacheInstance = {};
 };
 
 /**
@@ -219,6 +225,11 @@ const lookupCache = (context: ResolutionContext): FilePath | undefined => {
   return joinPath(result, context.restOfPath, !context.isWindowsPath);
 }
 
+const fetchMountPoints = (wslCommand: WslCommand): MountPoint[] => {
+  inMemoryMountPathCacheInstance[wslCommand] = determineMountPoints(wslCommand);
+  return inMemoryMountPathCacheInstance[wslCommand];
+}
+
 /**
  * Create a new @see ResolutionContext from the given path and parse options.
  *
@@ -228,14 +239,15 @@ const lookupCache = (context: ResolutionContext): FilePath | undefined => {
 const buildResolutionContext = (
   path: FilePath,
   options: ResolveOptions,
-  parser?: (inPath: FilePath) => [FilePath, FilePath]
+  parser?: (inPath: FilePath, mountPoints: MountPoint[]) => [FilePath, FilePath]
 ): ResolutionContext => {
   options.basePathCache = options.basePathCache || inMemoryCacheInstance;
   options.wslCommand = options.wslCommand || "wsl";
-
+  options.mountPoints = options.mountPoints || inMemoryMountPathCacheInstance[options.wslCommand] || fetchMountPoints(options.wslCommand);
+  // TODO: This actually doesn't cover network shares
   const isWindowsPath = /^\w:\\/i.test(path);
   const [basePath, restOfPath] = (parser ||
-    (!isWindowsPath ? parsePosixPath : parseWindowsPath))(path);
+    (!isWindowsPath ? parsePosixPath : parseWindowsPath))(path, options.mountPoints);
 
   return {
     basePath,

@@ -13,14 +13,17 @@ var __assign = (this && this.__assign) || function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 var child_process_1 = require("child_process");
 var path_handling_1 = require("./path-handling");
+var mount_1 = require("./mount");
 var WSL_UTIL = "wslpath";
 var _forceRunInWsl = undefined;
 var inMemoryCacheInstance = {};
+var inMemoryMountPathCacheInstance = {};
 var defaultResolveOptions = {
     wslCommand: "wsl"
 };
 exports.resetCache = function () {
     inMemoryCacheInstance = {};
+    inMemoryMountPathCacheInstance = {};
 };
 /**
  * Return a promise that resolves with a windows path to it's corresponding POSIX path in the wsl environment.
@@ -193,6 +196,10 @@ var lookupCache = function (context) {
     }
     return path_handling_1.joinPath(result, context.restOfPath, !context.isWindowsPath);
 };
+var fetchMountPoints = function (wslCommand) {
+    inMemoryMountPathCacheInstance[wslCommand] = mount_1.determineMountPoints(wslCommand);
+    return inMemoryMountPathCacheInstance[wslCommand];
+};
 /**
  * Create a new @see ResolutionContext from the given path and parse options.
  *
@@ -202,9 +209,11 @@ var lookupCache = function (context) {
 var buildResolutionContext = function (path, options, parser) {
     options.basePathCache = options.basePathCache || inMemoryCacheInstance;
     options.wslCommand = options.wslCommand || "wsl";
+    options.mountPoints = options.mountPoints || inMemoryMountPathCacheInstance[options.wslCommand] || fetchMountPoints(options.wslCommand);
+    // TODO: This actually doesn't cover network shares
     var isWindowsPath = /^\w:\\/i.test(path);
     var _a = (parser ||
-        (!isWindowsPath ? path_handling_1.parsePosixPath : path_handling_1.parseWindowsPath))(path), basePath = _a[0], restOfPath = _a[1];
+        (!isWindowsPath ? path_handling_1.parsePosixPath : path_handling_1.parseWindowsPath))(path, options.mountPoints), basePath = _a[0], restOfPath = _a[1];
     return {
         basePath: basePath,
         restOfPath: restOfPath,

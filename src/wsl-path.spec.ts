@@ -7,8 +7,9 @@ import {
   _setForceRunInWsl
 } from "./wsl-path";
 import { exec, execSync } from "child_process";
-import { ERROR_FILEPATH_MUST_BE_ABSOLUTE, WRONG_POSIX_PATH_ROOT } from "./path-handling";
+import { ERROR_FILEPATH_MUST_BE_ABSOLUTE } from "./path-handling";
 
+const DEFAULT_OPTIONS =  { mountPoints: [{ src: "/mnt/c", target: "C:\\"}] }
 jest.mock("child_process", () => ({
   exec: jest.fn(),
   execSync: jest.fn()
@@ -30,7 +31,7 @@ describe("WslPath utility", () => {
     expect.assertions(1);
     const wrongPath = "X\\something";
     try {
-      await windowsToWsl(wrongPath);
+      await windowsToWsl(wrongPath, { ...DEFAULT_OPTIONS });
     } catch (e) {
       expect(e).toEqual(Error(ERROR_FILEPATH_MUST_BE_ABSOLUTE));
     }
@@ -40,7 +41,7 @@ describe("WslPath utility", () => {
     const correctPath = "C:\\Users";
     mockProcessResult("/mnt/c   ");
 
-    const result = await windowsToWsl(correctPath);
+    const result = await windowsToWsl(correctPath, { ...DEFAULT_OPTIONS });
 
     expect(result).toEqual("/mnt/c/Users");
   });
@@ -50,27 +51,25 @@ describe("WslPath utility", () => {
     const correctPath = "C:\\Users\\Test";
     mockProcessResult("/mnt/c   ");
 
-    const result = await windowsToWsl(correctPath);
+    const result = await windowsToWsl(correctPath, { ...DEFAULT_OPTIONS });
 
     expect(result).toEqual("/mnt/c/Users/Test");
   });
 
-  it("should throw an error when a non /mnt/* linux path is provided in wslToWindows", async () => {
-    const wrongLinuxPath = "/home/user/myFile.tx";
-    expect.assertions(1);
+  it("should be able to resolve wsl paths that are under the \\\\wsl$\\ network share", async () => {
+    const wrongLinuxPath = "/home/user/myFile.txt";
+    mockProcessResult("\\\\wsl$\\Ubuntu\\home\\user   ");
 
-    try {
-      await wslToWindows(wrongLinuxPath);
-    } catch (e) {
-      expect(e).toEqual(Error(WRONG_POSIX_PATH_ROOT));
-    }
+    const result = await wslToWindows(wrongLinuxPath, { ...DEFAULT_OPTIONS });
+
+    expect(result).toEqual("\\\\wsl$\\Ubuntu\\home\\user\\myFile.txt")
   });
 
   it("should resolve valid wsl paths to windows paths", async () => {
     const mountedPath = "/mnt/c/Users";
     mockProcessResult("C:\\ ");
 
-    const result = await wslToWindows(mountedPath);
+    const result = await wslToWindows(mountedPath, { ...DEFAULT_OPTIONS });
 
     expect(result).toEqual("C:\\Users");
   });
@@ -79,7 +78,7 @@ describe("WslPath utility", () => {
     const mountedPath = "/mnt/c/Users/Test";
     mockProcessResult("C:\\ ");
 
-    const result = await wslToWindows(mountedPath);
+    const result = await wslToWindows(mountedPath, { ...DEFAULT_OPTIONS });
 
     expect(result).toEqual("C:\\Users\\Test");
   });
@@ -88,7 +87,7 @@ describe("WslPath utility", () => {
     const correctPath = "C:\\Users";
     mockProcessResult("/mnt/c   ");
 
-    const result =  windowsToWslSync(correctPath);
+    const result =  windowsToWslSync(correctPath,{ ...DEFAULT_OPTIONS });
 
     expect(result).toEqual("/mnt/c/Users");
   });
@@ -97,22 +96,9 @@ describe("WslPath utility", () => {
     const mountedPath = "/mnt/c/Users";
     mockProcessResult("C:\\ ");
 
-    const result = wslToWindowsSync(mountedPath);
+    const result = wslToWindowsSync(mountedPath, { ...DEFAULT_OPTIONS });
 
     expect(result).toEqual("C:\\Users");
-  });
-
-  it("should reject on unknown paths for wslToWindows", async () => {
-    const mountedPath = "/mnt/J/Users";
-    mockProcessResult(null, "Command failed: wslpath -w ....");
-
-    expect.assertions(1);
-
-    try {
-      await wslToWindows(mountedPath);
-    } catch (e) {
-      expect(String(e)).toMatch(/Command failed: wslpath -w /);
-    }
   });
 
   it("should retrieve results from the cache as soon as the base path has been resolved (posix -> windows) ", async () => {
@@ -120,8 +106,8 @@ describe("WslPath utility", () => {
     const mountedPath2 = "/mnt/c/Test";
     mockProcessResult("C:\\ ");
 
-    const result1 = await wslToWindows(mountedPath1);
-    const result2 = await wslToWindows(mountedPath2);
+    const result1 = await wslToWindows(mountedPath1, { ...DEFAULT_OPTIONS });
+    const result2 = await wslToWindows(mountedPath2, { ...DEFAULT_OPTIONS });
 
     expect(result1).toEqual("C:\\Users");
     expect(result2).toEqual("C:\\Test");
@@ -134,8 +120,8 @@ describe("WslPath utility", () => {
     const mountedPath2 = "C:\\Test";
     mockProcessResult("/mnt/c/");
 
-    const result1 = await windowsToWsl(mountedPath1);
-    const result2 = await windowsToWsl(mountedPath2);
+    const result1 = await windowsToWsl(mountedPath1, { ...DEFAULT_OPTIONS });
+    const result2 = await windowsToWsl(mountedPath2, { ...DEFAULT_OPTIONS });
 
     expect(result1).toEqual("/mnt/c/Users");
     expect(result2).toEqual("/mnt/c/Test");
@@ -148,7 +134,8 @@ describe("WslPath utility", () => {
 
     const result1 = await windowsToWsl(windowsPath, {
       basePathCache: { "wsl:C:\\": "/mnt/x" },
-      wslCommand: 'wsl'
+      wslCommand: 'wsl',
+      ...DEFAULT_OPTIONS
     });
 
     expect(result1).toEqual("/mnt/x/Users");
