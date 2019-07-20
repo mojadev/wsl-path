@@ -1,4 +1,3 @@
-import { MountPoint } from "./mount";
 /**
  * Textual representation of a system file path.
  */
@@ -65,4 +64,17 @@ export interface ResolutionContext {
     cache: {
         [key: string]: FilePath;
     };
+}
+/**
+ * A mountpoint in the wsl environment
+ */
+export interface MountPoint {
+    /**
+     * The (POSIX) source path.
+     */
+    src: FilePath;
+    /**
+     * The mapped windows drive, if applicable.
+     */
+    target?: WindowDrivePath;
 }

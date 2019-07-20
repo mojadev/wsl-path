@@ -114,6 +114,17 @@ describe("WslPath utility", () => {
     expect(exec).toHaveBeenCalledTimes(1);
   });
 
+  it("should not results from the cache when not requesting from a windows mount", async () => {
+    const mountedPath1 = "/usr/bin/test";
+    const mountedPath2 = "/usr/bin/test2";
+    mockProcessResult("\\wsl$\\usr\\bin ");
+
+    await wslToWindows(mountedPath1, { ...DEFAULT_OPTIONS });
+    await wslToWindows(mountedPath2, { ...DEFAULT_OPTIONS });
+
+    expect(exec).toHaveBeenCalledTimes(2);
+  });
+
 
   it("should retrieve results from the cache as soon as the base path has been resolved (windows -> posix -> windows) ", async () => {
     const mountedPath1 = "C:\\Users";

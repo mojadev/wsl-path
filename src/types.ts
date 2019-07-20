@@ -1,6 +1,3 @@
-import { MountPoint } from "./mount";
-
-
 /**
  * Textual representation of a system file path.
  */

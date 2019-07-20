@@ -204,10 +204,10 @@ const cacheValue = (
   sourceContext: ResolutionContext,
   resultContext: ResolutionContext
 ) => {
-  // this shouldn't happen, and even if it does so it should not be put in the cache
   if (sourceContext.isWindowsPath === resultContext.isWindowsPath) {
     return;
   }
+
   sourceContext.cache[cacheKey(sourceContext)] = resultContext.basePath;
   sourceContext.cache[cacheKey(resultContext)] = sourceContext.basePath;
 };
