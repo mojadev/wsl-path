@@ -8,6 +8,8 @@ A small node utlity for converting file paths from POSIX paths in wsl (Windows S
 
 This utility requires the wslpath CLI tool to be installed on the running machine and a wsl environment. Only the base drive letter (Windows) / mount folder (POSIX) is being translated into the windows world, the rest of the path is then appended in the correct form. Base path resolutions are cached, so only the first resolution causes wslpath to be called, while subsequent paths in the same drive/mount folder are resolved by the cache.
 
+The utility checks the mount points for the WSL environment in order to determine cachable paths.
+
 ## Usage
 
 The following examples are taken from the unit tests:
