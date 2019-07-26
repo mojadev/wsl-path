@@ -10,15 +10,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var path = __importStar(require("path"));
 exports.ERROR_FILEPATH_MUST_BE_ABSOLUTE = "Can't resolve windows filepath to wsl path: Path must be an absolute windows path";
 exports.WRONG_POSIX_PATH_ROOT = "Linux path must reside in /mnt/";
-exports.parsePosixPath = function (linuxPath) {
-    try {
-        return exports.splitByPattern(/^(\/mnt\/\w)(.*)$/gi, linuxPath);
+exports.parsePosixPath = function (linuxPath, mountPoints) {
+    var mountPoint = mountPoints.find(function (_a) {
+        var src = _a.src;
+        return linuxPath.startsWith(src);
+    });
+    if (!mountPoint || !mountPoint.target) {
+        return [path.dirname(linuxPath), path.basename(linuxPath)];
     }
-    catch (e) {
-        throw Error(exports.WRONG_POSIX_PATH_ROOT);
-    }
+    return [mountPoint.src, linuxPath.substring(mountPoint.src.length)];
 };
-exports.parseWindowsPath = function (windowsPath) {
+exports.parseWindowsPath = function (windowsPath, _) {
     try {
         return exports.splitByPattern(/^(\w+:\\)(.*)$/gi, windowsPath);
     }

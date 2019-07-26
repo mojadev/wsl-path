@@ -1,20 +1,21 @@
-import { FilePath, WindowDrivePath } from "./types";
+import { FilePath, WindowDrivePath, MountPoint } from "./types";
 import * as path from "path";
 
 export const ERROR_FILEPATH_MUST_BE_ABSOLUTE =
   "Can't resolve windows filepath to wsl path: Path must be an absolute windows path";
 export const WRONG_POSIX_PATH_ROOT = "Linux path must reside in /mnt/";
 
-export const parsePosixPath = (linuxPath: FilePath): [FilePath, FilePath] => {
-  try {
-    return splitByPattern(/^(\/mnt\/\w)(.*)$/gi, linuxPath);
-  } catch (e) {
-    throw Error(WRONG_POSIX_PATH_ROOT);
+export const parsePosixPath = (linuxPath: FilePath, mountPoints: MountPoint[]): [FilePath, FilePath] => {
+  const mountPoint = mountPoints.find(({ src }) => linuxPath.startsWith(src));
+  if (!mountPoint || !mountPoint.target) {
+    return [path.dirname(linuxPath), path.basename(linuxPath)]
   }
+  return [mountPoint.src, linuxPath.substring(mountPoint.src.length)];
 };
 
 export const parseWindowsPath = (
-  windowsPath: FilePath
+  windowsPath: FilePath,
+  _: MountPoint[]
 ): [WindowDrivePath, FilePath] => {
   try {
     return splitByPattern(/^(\w+:\\)(.*)$/gi, windowsPath);

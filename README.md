@@ -88,14 +88,14 @@ const result1 = await windowsToWsl(windowsPath, {
 ## Building and testing
 
 Install packages:
-`yarn install`
+`npm install`
 
 Build:
-`yarn build`
+`npm run build`
 
 Test:
-`yarn test` or `yarn test --watch`
+`npm run test` or `npm run test -- --watch`
 
 Integration Test, which does not mock wslpath:
-`CALL_WSL_PROCESS=1 yarn test`
+`CALL_WSL_PROCESS=1 npm run test`
 

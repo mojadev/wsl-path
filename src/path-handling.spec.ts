@@ -1,25 +1,25 @@
-import {parsePosixPath, WRONG_POSIX_PATH_ROOT, ERROR_FILEPATH_MUST_BE_ABSOLUTE, parseWindowsPath, joinPath} from './path-handling';
+import {parsePosixPath, ERROR_FILEPATH_MUST_BE_ABSOLUTE, parseWindowsPath, joinPath} from './path-handling';
+
+const DEFAULT_MOUNT_POINT = [{ src: "/mnt/c", target: "C:\\" }];
 
 describe('Path handling', () => {
     describe('parsePosixPath', () => {
         it('should split a up a POSIX path into the mount point and rest of path', () => {
             const validPosixPath = '/mnt/c/Users/Bob';
 
-            const [base, restOfPath] = parsePosixPath(validPosixPath);
+            const [base, restOfPath] = parsePosixPath(validPosixPath, DEFAULT_MOUNT_POINT);
 
             expect(base).toEqual('/mnt/c');
             expect(restOfPath).toEqual('/Users/Bob');
         });
 
-        it('should throw an error when the path is not under /mnt/ ', () => {
-            const invalidPosixPath = '/home/bob';
-            expect.assertions(1);
+        it('should use the full path when the path is not in the mount paths ', () => {
+            const posixPath = '/home/bob';
 
-            try {
-                parsePosixPath(invalidPosixPath);
-            } catch(e) {
-                expect(e).toEqual(Error(WRONG_POSIX_PATH_ROOT));
-            }
+            const [base, restOfPath] = parsePosixPath(posixPath, DEFAULT_MOUNT_POINT);
+
+            expect(base).toEqual('/home');
+            expect(restOfPath).toEqual('bob');
         });
     });
 
@@ -27,7 +27,7 @@ describe('Path handling', () => {
         it('should split a up a Windows path into the mount point and rest of path', () => {
             const validWindowPath = 'C:\\Users\\Bob';
 
-            const [base, restOfPath] = parseWindowsPath(validWindowPath);
+            const [base, restOfPath] = parseWindowsPath(validWindowPath, []);
 
             expect(base).toEqual('C:\\');
             expect(restOfPath).toEqual('Users\\Bob');
@@ -38,7 +38,7 @@ describe('Path handling', () => {
             expect.assertions(1);
 
             try {
-                parseWindowsPath(invalidWindowsPath);
+                parseWindowsPath(invalidWindowsPath, []);
             } catch(e) {
                 expect(e).toEqual(Error(ERROR_FILEPATH_MUST_BE_ABSOLUTE));
             }
