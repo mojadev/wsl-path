@@ -2,7 +2,7 @@
 
 # wsl-path
 
-A small node utlity for converting file paths from POSIX paths in wsl (Windows Subsystem for Linux) to their counterparts in the Windows Filesystem and vice versa.
+A small node utility for converting file paths from POSIX paths in wsl (Windows Subsystem for Linux) to their counterparts in the Windows Filesystem and vice versa.
 
 ## How it works
 
@@ -74,7 +74,7 @@ const result1 = await windowsToWsl(windowsPath, {
 expect(result1).toEqual("/mnt/x/Users");
 ```
 
-## Using different wsl enviornments than the default
+## Using different wsl environments than the default
 
 If you have multiple wsl environments installed, you can use the wslCommand option for setting up the shell that should be used:
 
