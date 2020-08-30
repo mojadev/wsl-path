@@ -11,6 +11,7 @@ var __assign = (this && this.__assign) || function () {
     return __assign.apply(this, arguments);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports._setForceRunInWsl = exports.windowsToWslSync = exports.wslToWindowsSync = exports.wslToWindows = exports.windowsToWsl = exports.resetCache = void 0;
 var child_process_1 = require("child_process");
 var path_handling_1 = require("./path-handling");
 var mount_1 = require("./mount");
@@ -177,7 +178,6 @@ var cacheKey = function (context) {
  * @param resultContext The @see ResolutionContext defining the resolve output.
  */
 var cacheValue = function (sourceContext, resultContext) {
-    // this shouldn't happen, and even if it does so it should not be put in the cache
     if (sourceContext.isWindowsPath === resultContext.isWindowsPath) {
         return;
     }

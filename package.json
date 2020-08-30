@@ -1,7 +1,7 @@
 {
   "name": "wsl-path",
-  "version": "2.0.0",
-  "description": "Convert Windows paths to WSL paths and vice versa",
+  "version": "3.0.0",
+  "description": "Convert Windows paths to WSL (1 & 2) paths and vice versa",
   "main": "dist/index.js",
   "scripts": {
     "prebuild": "rimraf ./dist",
@@ -21,11 +21,11 @@
   "license": "MIT",
   "types": "./dist/index.d.ts",
   "devDependencies": {
-    "@types/jest": "^24.0.15",
-    "@types/node": "^12.6.8",
-    "jest": "^24.8.0",
-    "rimraf": "^2.6.3",
-    "ts-jest": "^24.0.2",
-    "typescript": "^3.5.3"
+    "@types/jest": "^24.9.1",
+    "@types/node": "^12.12.54",
+    "jest": "^24.9.0",
+    "rimraf": "^2.7.1",
+    "ts-jest": "^26.3.0",
+    "typescript": "^3.9.7"
   }
 }

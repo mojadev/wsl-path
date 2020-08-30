@@ -1,4 +1,4 @@
-import { ResolveOptions } from "./types";
+import { ResolveOptions, FilePath } from "./types";
 export declare const resetCache: () => void;
 /**
  * Return a promise that resolves with a windows path to it's corresponding POSIX path in the wsl environment.
@@ -11,7 +11,7 @@ export declare const resetCache: () => void;
  * @param windowsPath   The windows path to convert to a posix path
  * @param options       Overwrite the resolver options, e.g. for disabling base caching
  */
-export declare const windowsToWsl: (windowsPath: string, options?: ResolveOptions) => Promise<string>;
+export declare const windowsToWsl: (windowsPath: FilePath, options?: ResolveOptions) => Promise<FilePath>;
 /**
  * Return a promise that resolves a POSIX path to it's corresponding windows path in the wsl environment.
  * This calls wslpath for resolving the base path and caches it in the default
@@ -21,7 +21,7 @@ export declare const windowsToWsl: (windowsPath: string, options?: ResolveOption
  * @param posixPath   The posix path to convert to a windos path
  * @param options     Overwrite the resolver options, e.g. for disabling base caching
  */
-export declare const wslToWindows: (posixPath: string, options?: ResolveOptions) => Promise<string>;
+export declare const wslToWindows: (posixPath: FilePath, options?: ResolveOptions) => Promise<FilePath>;
 /**
  * Resolve the POSIX path for the given windows path in the wsl environment in a synchronous call.
  * This calls wslpath for resolving the base path and caches it in the default
@@ -31,7 +31,7 @@ export declare const wslToWindows: (posixPath: string, options?: ResolveOptions)
  * @param posixPath     The posix path to convert to a posix path
  * @param options       Overwrite the resolver options, e.g. for disabling base caching
  */
-export declare const wslToWindowsSync: (posixPath: string, options?: ResolveOptions) => string;
+export declare const wslToWindowsSync: (posixPath: FilePath, options?: ResolveOptions) => FilePath;
 /**
  * Resolve the Windows path for the given POSI path in the wsl environment in a synchronous call.
  * In case the resolution does not succeed, the Promise rejects with the appropriate error response.
@@ -43,7 +43,7 @@ export declare const wslToWindowsSync: (posixPath: string, options?: ResolveOpti
  * @param windowsPath   The windows path to convert to a posix path
  * @param options       Overwrite the resolver options, e.g. for disabling base caching
  */
-export declare const windowsToWslSync: (windowsPath: string, options?: ResolveOptions) => string;
+export declare const windowsToWslSync: (windowsPath: FilePath, options?: ResolveOptions) => FilePath;
 /**
  * Force to run/not run wslpath in a wsl environment.
  * This is mostly useful for testing scenarios
