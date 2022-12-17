@@ -5,11 +5,10 @@ import {
   ResolutionContext,
   PathCache,
   WslCommand,
-  MountPoint
+  MountPoint,
 } from "./types";
 import { parseWindowsPath, joinPath, parsePosixPath } from "./path-handling";
 import { determineMountPoints } from "./mount";
-
 
 const WSL_UTIL = "wslpath";
 
@@ -19,7 +18,7 @@ let inMemoryCacheInstance: PathCache = {};
 let inMemoryMountPathCacheInstance: { [key: string]: MountPoint[] } = {};
 
 const defaultResolveOptions: ResolveOptions = {
-  wslCommand: "wsl"
+  wslCommand: "wsl",
 };
 
 export const resetCache = () => {
@@ -40,9 +39,12 @@ export const resetCache = () => {
  */
 export const windowsToWsl = (
   windowsPath: FilePath,
-  options: ResolveOptions = {...defaultResolveOptions}
+  options: ResolveOptions = { ...defaultResolveOptions }
 ): Promise<FilePath> => {
-  return resolveAsync(buildWindowsResolutionContext(windowsPath, options));
+  return resolveAsync(
+    buildWindowsResolutionContext(windowsPath, options),
+    options
+  );
 };
 
 /**
@@ -56,9 +58,9 @@ export const windowsToWsl = (
  */
 export const wslToWindows = (
   posixPath: FilePath,
-  options: ResolveOptions = {...defaultResolveOptions}
+  options: ResolveOptions = { ...defaultResolveOptions }
 ): Promise<FilePath> => {
-  return resolveAsync(buildPosixResolutionContext(posixPath, options));
+  return resolveAsync(buildPosixResolutionContext(posixPath, options), options);
 };
 
 /**
@@ -72,9 +74,9 @@ export const wslToWindows = (
  */
 export const wslToWindowsSync = (
   posixPath: FilePath,
-  options: ResolveOptions = {...defaultResolveOptions}
+  options: ResolveOptions = { ...defaultResolveOptions }
 ): FilePath => {
-  return resolveSync(buildPosixResolutionContext(posixPath, options));
+  return resolveSync(buildPosixResolutionContext(posixPath, options), options);
 };
 
 /**
@@ -90,23 +92,30 @@ export const wslToWindowsSync = (
  */
 export const windowsToWslSync = (
   windowsPath: FilePath,
-  options: ResolveOptions = {...defaultResolveOptions}
+  options: ResolveOptions = { ...defaultResolveOptions }
 ): FilePath => {
-  return resolveSync(buildWindowsResolutionContext(windowsPath, options));
+  return resolveSync(
+    buildWindowsResolutionContext(windowsPath, options),
+    options
+  );
 };
 
 /**
  * Perform a path resolution for the given @see ResolutionContext in a asynchronous manner.
  *
  * @param context The @see ResolutionContext to resolve.
+ * @param options The @see ResolveOptions to resolve
  */
-const resolveAsync = (context: ResolutionContext): Promise<FilePath> => {
+const resolveAsync = (
+  context: ResolutionContext,
+  options: ResolveOptions
+): Promise<FilePath> => {
   const cachedResult = lookupCache(context);
   if (cachedResult) {
     return Promise.resolve(cachedResult);
   }
-  return callWslPathUtil(context).then(result => {
-    const resultContext = buildResolutionContext(result, {});
+  return callWslPathUtil(context).then((result) => {
+    const resultContext = buildResolutionContext(result, options);
 
     cacheValue(context, resultContext);
     return result;
@@ -117,8 +126,12 @@ const resolveAsync = (context: ResolutionContext): Promise<FilePath> => {
  * Perform a path resolution for the given @see ResolutionContext in a synchronous manner.
  *
  * @param context The @see ResolutionContext to resolve.
+ * @param options The @see ResolveOptions to resolve
  */
-const resolveSync = (context: ResolutionContext): FilePath => {
+const resolveSync = (
+  context: ResolutionContext,
+  options: ResolveOptions
+): FilePath => {
   const cachedResult = lookupCache(context);
   if (cachedResult) {
     return cachedResult;
@@ -223,12 +236,12 @@ const lookupCache = (context: ResolutionContext): FilePath | undefined => {
     return;
   }
   return joinPath(result, context.restOfPath, !context.isWindowsPath);
-}
+};
 
 const fetchMountPoints = (wslCommand: WslCommand): MountPoint[] => {
   inMemoryMountPathCacheInstance[wslCommand] = determineMountPoints(wslCommand);
   return inMemoryMountPathCacheInstance[wslCommand];
-}
+};
 
 /**
  * Create a new @see ResolutionContext from the given path and parse options.
@@ -243,18 +256,22 @@ const buildResolutionContext = (
 ): ResolutionContext => {
   options.basePathCache = options.basePathCache || inMemoryCacheInstance;
   options.wslCommand = options.wslCommand || "wsl";
-  options.mountPoints = options.mountPoints || inMemoryMountPathCacheInstance[options.wslCommand] || fetchMountPoints(options.wslCommand);
+  options.mountPoints =
+    options.mountPoints ||
+    inMemoryMountPathCacheInstance[options.wslCommand] ||
+    fetchMountPoints(options.wslCommand);
   // TODO: This actually doesn't cover network shares
   const isWindowsPath = /^\w:\\/i.test(path);
-  const [basePath, restOfPath] = (parser ||
-    (!isWindowsPath ? parsePosixPath : parseWindowsPath))(path, options.mountPoints);
+  const [basePath, restOfPath] = (
+    parser || (!isWindowsPath ? parsePosixPath : parseWindowsPath)
+  )(path, options.mountPoints);
 
   return {
     basePath,
     restOfPath,
     isWindowsPath,
     wslCommand: options.wslCommand,
-    cache: options.basePathCache
+    cache: options.basePathCache,
   };
 };
 

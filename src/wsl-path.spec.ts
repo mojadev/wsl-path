@@ -4,15 +4,15 @@ import {
   resetCache,
   wslToWindowsSync,
   windowsToWslSync,
-  _setForceRunInWsl
+  _setForceRunInWsl,
 } from "./wsl-path";
 import { exec, execSync } from "child_process";
 import { ERROR_FILEPATH_MUST_BE_ABSOLUTE } from "./path-handling";
 
-const DEFAULT_OPTIONS =  { mountPoints: [{ src: "/mnt/c", target: "C:\\"}] }
+const DEFAULT_OPTIONS = { mountPoints: [{ src: "/mnt/c", target: "C:\\" }] };
 jest.mock("child_process", () => ({
   exec: jest.fn(),
-  execSync: jest.fn()
+  execSync: jest.fn(),
 }));
 
 describe("WslPath utility", () => {
@@ -46,7 +46,6 @@ describe("WslPath utility", () => {
     expect(result).toEqual("/mnt/c/Users");
   });
 
-
   it("should resolve a valid nested windows path to a POSIX path with windowsToWslfrom the wsl context", async () => {
     const correctPath = "C:\\Users\\Test";
     mockProcessResult("/mnt/c   ");
@@ -62,7 +61,7 @@ describe("WslPath utility", () => {
 
     const result = await wslToWindows(wrongLinuxPath, { ...DEFAULT_OPTIONS });
 
-    expect(result).toEqual("\\\\wsl$\\Ubuntu\\home\\user\\myFile.txt")
+    expect(result).toEqual("\\\\wsl$\\Ubuntu\\home\\user\\myFile.txt");
   });
 
   it("should resolve valid wsl paths to windows paths", async () => {
@@ -87,7 +86,7 @@ describe("WslPath utility", () => {
     const correctPath = "C:\\Users";
     mockProcessResult("/mnt/c   ");
 
-    const result =  windowsToWslSync(correctPath,{ ...DEFAULT_OPTIONS });
+    const result = windowsToWslSync(correctPath, { ...DEFAULT_OPTIONS });
 
     expect(result).toEqual("/mnt/c/Users");
   });
@@ -125,7 +124,6 @@ describe("WslPath utility", () => {
     expect(exec).toHaveBeenCalledTimes(2);
   });
 
-
   it("should retrieve results from the cache as soon as the base path has been resolved (windows -> posix -> windows) ", async () => {
     const mountedPath1 = "C:\\Users";
     const mountedPath2 = "C:\\Test";
@@ -145,8 +143,8 @@ describe("WslPath utility", () => {
 
     const result1 = await windowsToWsl(windowsPath, {
       basePathCache: { "wsl:C:\\": "/mnt/x" },
-      wslCommand: 'wsl',
-      ...DEFAULT_OPTIONS
+      wslCommand: "wsl",
+      ...DEFAULT_OPTIONS,
     });
 
     expect(result1).toEqual("/mnt/x/Users");
@@ -167,9 +165,27 @@ describe("WslPath utility", () => {
     const windowsPath = "C:\\Users";
     mockProcessResult("/mnt/x");
 
-    await windowsToWsl(windowsPath, {wslCommand: 'ubuntu run'});
+    await windowsToWsl(windowsPath, { wslCommand: "ubuntu run" });
 
-    expect((exec as any).mock.calls[0][0]).toEqual("ubuntu run wslpath  C:\\\\");
+    expect((exec as any).mock.calls[0][0]).toEqual(
+      "ubuntu run wslpath  C:\\\\"
+    );
+  });
+
+  it("should return the same path for results that have been resolved during runtime and results from the cache", async () => {
+    const windowsPath = "C:\\Users\\someUser\\Documents\\path.txt";
+    mockProcessResult("/mnt/c");
+    const cache = {};
+
+    const resolveParams = {
+      basePathCache: cache,
+      wslCommand: "wsl",
+      ...DEFAULT_OPTIONS,
+    };
+
+    const result1 = await windowsToWsl(windowsPath, resolveParams);
+    const result2 = await windowsToWsl(windowsPath, resolveParams);
+    expect(result2).toEqual(result1);
   });
 });
 
