@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.0.2](https://github.com/mojadev/wsl-path/compare/v3.0.1...v3.0.2) (2022-12-18)
+
+
+### Bug Fixes
+
+* do not publish whole repository automatically ([1bbd3f5](https://github.com/mojadev/wsl-path/commit/1bbd3f5eedccf384cc4da26388ffae1640141aee))
+* fix release-please ([f1911f3](https://github.com/mojadev/wsl-path/commit/f1911f3d4e4c329bf7c04804b7eb921c1af9bea7))
+
 ## [3.0.1](https://github.com/mojadev/wsl-path/compare/v3.0.1...v3.0.1) (2022-12-18)
 
 - fix release-please ([f1911f3](https://github.com/mojadev/wsl-path/commit/f1911f3d4e4c329bf7c04804b7eb921c1af9bea7))
