@@ -6,6 +6,13 @@
 
 * fix release-please ([f1911f3](https://github.com/mojadev/wsl-path/commit/f1911f3d4e4c329bf7c04804b7eb921c1af9bea7))
 
+## [3.0.1](https://github.com/mojadev/wsl-path/compare/v3.0.1...v3.0.1) (2022-12-18)
+
+
+### Bug Fixes
+
+* fix release-please ([f1911f3](https://github.com/mojadev/wsl-path/commit/f1911f3d4e4c329bf7c04804b7eb921c1af9bea7))
+
 ## [3.0.1](https://github.com/mojadev/wsl-path/compare/3.0.0...v3.0.1) (2022-12-18)
 
 
