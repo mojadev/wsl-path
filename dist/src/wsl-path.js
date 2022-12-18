@@ -20,7 +20,7 @@ var _forceRunInWsl = undefined;
 var inMemoryCacheInstance = {};
 var inMemoryMountPathCacheInstance = {};
 var defaultResolveOptions = {
-    wslCommand: "wsl"
+    wslCommand: "wsl",
 };
 exports.resetCache = function () {
     inMemoryCacheInstance = {};
@@ -39,7 +39,7 @@ exports.resetCache = function () {
  */
 exports.windowsToWsl = function (windowsPath, options) {
     if (options === void 0) { options = __assign({}, defaultResolveOptions); }
-    return resolveAsync(buildWindowsResolutionContext(windowsPath, options));
+    return resolveAsync(buildWindowsResolutionContext(windowsPath, options), options);
 };
 /**
  * Return a promise that resolves a POSIX path to it's corresponding windows path in the wsl environment.
@@ -52,7 +52,7 @@ exports.windowsToWsl = function (windowsPath, options) {
  */
 exports.wslToWindows = function (posixPath, options) {
     if (options === void 0) { options = __assign({}, defaultResolveOptions); }
-    return resolveAsync(buildPosixResolutionContext(posixPath, options));
+    return resolveAsync(buildPosixResolutionContext(posixPath, options), options);
 };
 /**
  * Resolve the POSIX path for the given windows path in the wsl environment in a synchronous call.
@@ -65,7 +65,7 @@ exports.wslToWindows = function (posixPath, options) {
  */
 exports.wslToWindowsSync = function (posixPath, options) {
     if (options === void 0) { options = __assign({}, defaultResolveOptions); }
-    return resolveSync(buildPosixResolutionContext(posixPath, options));
+    return resolveSync(buildPosixResolutionContext(posixPath, options), options);
 };
 /**
  * Resolve the Windows path for the given POSI path in the wsl environment in a synchronous call.
@@ -80,20 +80,21 @@ exports.wslToWindowsSync = function (posixPath, options) {
  */
 exports.windowsToWslSync = function (windowsPath, options) {
     if (options === void 0) { options = __assign({}, defaultResolveOptions); }
-    return resolveSync(buildWindowsResolutionContext(windowsPath, options));
+    return resolveSync(buildWindowsResolutionContext(windowsPath, options), options);
 };
 /**
  * Perform a path resolution for the given @see ResolutionContext in a asynchronous manner.
  *
  * @param context The @see ResolutionContext to resolve.
+ * @param options The @see ResolveOptions to resolve
  */
-var resolveAsync = function (context) {
+var resolveAsync = function (context, options) {
     var cachedResult = lookupCache(context);
     if (cachedResult) {
         return Promise.resolve(cachedResult);
     }
     return callWslPathUtil(context).then(function (result) {
-        var resultContext = buildResolutionContext(result, {});
+        var resultContext = buildResolutionContext(result, options);
         cacheValue(context, resultContext);
         return result;
     });
@@ -102,8 +103,9 @@ var resolveAsync = function (context) {
  * Perform a path resolution for the given @see ResolutionContext in a synchronous manner.
  *
  * @param context The @see ResolutionContext to resolve.
+ * @param options The @see ResolveOptions to resolve
  */
-var resolveSync = function (context) {
+var resolveSync = function (context, options) {
     var cachedResult = lookupCache(context);
     if (cachedResult) {
         return cachedResult;
@@ -209,17 +211,19 @@ var fetchMountPoints = function (wslCommand) {
 var buildResolutionContext = function (path, options, parser) {
     options.basePathCache = options.basePathCache || inMemoryCacheInstance;
     options.wslCommand = options.wslCommand || "wsl";
-    options.mountPoints = options.mountPoints || inMemoryMountPathCacheInstance[options.wslCommand] || fetchMountPoints(options.wslCommand);
+    options.mountPoints =
+        options.mountPoints ||
+            inMemoryMountPathCacheInstance[options.wslCommand] ||
+            fetchMountPoints(options.wslCommand);
     // TODO: This actually doesn't cover network shares
     var isWindowsPath = /^\w:\\/i.test(path);
-    var _a = (parser ||
-        (!isWindowsPath ? path_handling_1.parsePosixPath : path_handling_1.parseWindowsPath))(path, options.mountPoints), basePath = _a[0], restOfPath = _a[1];
+    var _a = (parser || (!isWindowsPath ? path_handling_1.parsePosixPath : path_handling_1.parseWindowsPath))(path, options.mountPoints), basePath = _a[0], restOfPath = _a[1];
     return {
         basePath: basePath,
         restOfPath: restOfPath,
         isWindowsPath: isWindowsPath,
         wslCommand: options.wslCommand,
-        cache: options.basePathCache
+        cache: options.basePathCache,
     };
 };
 /**
