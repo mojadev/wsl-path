@@ -7,10 +7,11 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: google-github-actions/release-please-action@v3
+      - id: release
+        uses: google-github-actions/release-please-action@v3
         with:
           release-type: node
-          package-name: release-please-action
+          package-name: wsl-path
       - uses: actions/checkout@v2
         if: ${{ steps.release.outputs.release_created }}
       - uses: actions/setup-node@v1
