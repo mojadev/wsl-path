@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.0.3](https://github.com/mojadev/wsl-path/compare/v3.0.2...v3.0.3) (2022-12-25)
+
+
+### Bug Fixes
+
+* bundle typescript types ([d0945a7](https://github.com/mojadev/wsl-path/commit/d0945a7468f6010210706b81ced09197dfe682c1))
+
 ## [3.0.2](https://github.com/mojadev/wsl-path/compare/v3.0.1...v3.0.2) (2022-12-18)
 
 
