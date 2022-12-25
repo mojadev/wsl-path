@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.0.4](https://github.com/mojadev/wsl-path/compare/v3.0.3...v3.0.4) (2022-12-25)
+
+
+### Bug Fixes
+
+* fix build ignoring src ([883c1d8](https://github.com/mojadev/wsl-path/commit/883c1d807c431f921d191e2f3e19f098ffa2d8ee))
+
 ## [3.0.3](https://github.com/mojadev/wsl-path/compare/v3.0.2...v3.0.3) (2022-12-25)
 
 
