@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.0](https://github.com/mojadev/wsl-path/compare/v3.0.4...v4.0.0) (2022-12-26)
+
+
+### Miscellaneous Chores
+
+* update versions ([dc2c517](https://github.com/mojadev/wsl-path/commit/dc2c517123b8842879603392e85a05baf371dc51))
+
 ## [3.0.4](https://github.com/mojadev/wsl-path/compare/v3.0.3...v3.0.4) (2022-12-25)
 
 
