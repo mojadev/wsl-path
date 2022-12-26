@@ -22,10 +22,11 @@ var inMemoryMountPathCacheInstance = {};
 var defaultResolveOptions = {
     wslCommand: "wsl",
 };
-exports.resetCache = function () {
+var resetCache = function () {
     inMemoryCacheInstance = {};
     inMemoryMountPathCacheInstance = {};
 };
+exports.resetCache = resetCache;
 /**
  * Return a promise that resolves with a windows path to it's corresponding POSIX path in the wsl environment.
  * In case the resolution does not succeed, the Promise rejects with the appropriate error response.
@@ -37,10 +38,11 @@ exports.resetCache = function () {
  * @param windowsPath   The windows path to convert to a posix path
  * @param options       Overwrite the resolver options, e.g. for disabling base caching
  */
-exports.windowsToWsl = function (windowsPath, options) {
+var windowsToWsl = function (windowsPath, options) {
     if (options === void 0) { options = __assign({}, defaultResolveOptions); }
     return resolveAsync(buildWindowsResolutionContext(windowsPath, options), options);
 };
+exports.windowsToWsl = windowsToWsl;
 /**
  * Return a promise that resolves a POSIX path to it's corresponding windows path in the wsl environment.
  * This calls wslpath for resolving the base path and caches it in the default
@@ -50,10 +52,11 @@ exports.windowsToWsl = function (windowsPath, options) {
  * @param posixPath   The posix path to convert to a windos path
  * @param options     Overwrite the resolver options, e.g. for disabling base caching
  */
-exports.wslToWindows = function (posixPath, options) {
+var wslToWindows = function (posixPath, options) {
     if (options === void 0) { options = __assign({}, defaultResolveOptions); }
     return resolveAsync(buildPosixResolutionContext(posixPath, options), options);
 };
+exports.wslToWindows = wslToWindows;
 /**
  * Resolve the POSIX path for the given windows path in the wsl environment in a synchronous call.
  * This calls wslpath for resolving the base path and caches it in the default
@@ -63,10 +66,11 @@ exports.wslToWindows = function (posixPath, options) {
  * @param posixPath     The posix path to convert to a posix path
  * @param options       Overwrite the resolver options, e.g. for disabling base caching
  */
-exports.wslToWindowsSync = function (posixPath, options) {
+var wslToWindowsSync = function (posixPath, options) {
     if (options === void 0) { options = __assign({}, defaultResolveOptions); }
     return resolveSync(buildPosixResolutionContext(posixPath, options), options);
 };
+exports.wslToWindowsSync = wslToWindowsSync;
 /**
  * Resolve the Windows path for the given POSI path in the wsl environment in a synchronous call.
  * In case the resolution does not succeed, the Promise rejects with the appropriate error response.
@@ -78,10 +82,11 @@ exports.wslToWindowsSync = function (posixPath, options) {
  * @param windowsPath   The windows path to convert to a posix path
  * @param options       Overwrite the resolver options, e.g. for disabling base caching
  */
-exports.windowsToWslSync = function (windowsPath, options) {
+var windowsToWslSync = function (windowsPath, options) {
     if (options === void 0) { options = __assign({}, defaultResolveOptions); }
     return resolveSync(buildWindowsResolutionContext(windowsPath, options), options);
 };
+exports.windowsToWslSync = windowsToWslSync;
 /**
  * Perform a path resolution for the given @see ResolutionContext in a asynchronous manner.
  *
@@ -122,8 +127,8 @@ var resolveSync = function (context, options) {
  */
 var callWslPathUtilSync = function (context) {
     var wslCall = toWslCommand(context);
-    var stdout = child_process_1.execSync(wslCall).toString();
-    return path_handling_1.joinPath(stdout.trim(), context.restOfPath, !context.isWindowsPath);
+    var stdout = (0, child_process_1.execSync)(wslCall).toString();
+    return (0, path_handling_1.joinPath)(stdout.trim(), context.restOfPath, !context.isWindowsPath);
 };
 /**
  * Execute the wsl path resolution asynchronously.
@@ -133,7 +138,7 @@ var callWslPathUtilSync = function (context) {
 var callWslPathUtil = function (context) {
     var wslCall = toWslCommand(context);
     return new Promise(function (resolve, reject) {
-        child_process_1.exec(wslCall, function (err, stdout, stderr) {
+        (0, child_process_1.exec)(wslCall, function (err, stdout, stderr) {
             if (err) {
                 reject(err);
             }
@@ -141,7 +146,7 @@ var callWslPathUtil = function (context) {
                 reject((stderr || "").trim());
             }
             else {
-                resolve(path_handling_1.joinPath(stdout.trim(), context.restOfPath, !context.isWindowsPath));
+                resolve((0, path_handling_1.joinPath)(stdout.trim(), context.restOfPath, !context.isWindowsPath));
             }
         });
     });
@@ -152,7 +157,7 @@ var callWslPathUtil = function (context) {
  * @param context The @see ResolutionContext that should be resolved.
  */
 var toWslCommand = function (context) {
-    var baseCommand = WSL_UTIL + " " + (!context.isWindowsPath ? "-w" : "") + " " + context.basePath;
+    var baseCommand = "".concat(WSL_UTIL, " ").concat(!context.isWindowsPath ? "-w" : "", " ").concat(context.basePath);
     if (process.platform !== "win32" && _forceRunInWsl === false) {
         return baseCommand;
     }
@@ -162,16 +167,17 @@ var toWslCommand = function (context) {
  * Force to run/not run wslpath in a wsl environment.
  * This is mostly useful for testing scenarios
  */
-exports._setForceRunInWsl = function (value) {
+var _setForceRunInWsl = function (value) {
     return (_forceRunInWsl = value);
 };
+exports._setForceRunInWsl = _setForceRunInWsl;
 /**
  * Return the cache key used for storing and retrieving the given @see ResolutionContext.
  *
  * @param context The context to create the key for.
  */
 var cacheKey = function (context) {
-    return context.wslCommand + ":" + context.basePath;
+    return "".concat(context.wslCommand, ":").concat(context.basePath);
 };
 /**
  * Mark the resultContext as being the resolution result for sourceContext.
@@ -196,10 +202,10 @@ var lookupCache = function (context) {
     if (!result) {
         return;
     }
-    return path_handling_1.joinPath(result, context.restOfPath, !context.isWindowsPath);
+    return (0, path_handling_1.joinPath)(result, context.restOfPath, !context.isWindowsPath);
 };
 var fetchMountPoints = function (wslCommand) {
-    inMemoryMountPathCacheInstance[wslCommand] = mount_1.determineMountPoints(wslCommand);
+    inMemoryMountPathCacheInstance[wslCommand] = (0, mount_1.determineMountPoints)(wslCommand);
     return inMemoryMountPathCacheInstance[wslCommand];
 };
 /**

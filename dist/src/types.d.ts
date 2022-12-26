@@ -1,16 +1,16 @@
 /**
  * Textual representation of a system file path.
  */
-export declare type FilePath = string;
+export type FilePath = string;
 /**
  * A string containing a windows drive path, like
  * C:\, D:\...
  */
-export declare type WindowDrivePath = string;
+export type WindowDrivePath = string;
 /**
  * A wsl command line, e.g. 'wsl', 'bash', 'ubuntu run', etc.
  */
-export declare type WslCommand = string;
+export type WslCommand = string;
 /**
  * Additional options that allow modifying the resolution behaviour.
  */
@@ -35,7 +35,7 @@ export interface ResolveOptions {
      */
     mountPoints?: MountPoint[];
 }
-export declare type PathCache = {
+export type PathCache = {
     [key: string]: FilePath;
 };
 /**

@@ -1,7 +1,11 @@
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -14,7 +18,7 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
     __setModuleDefault(result, mod);
     return result;
 };
@@ -23,7 +27,7 @@ exports.joinPath = exports.splitByPattern = exports.parseWindowsPath = exports.p
 var path = __importStar(require("path"));
 exports.ERROR_FILEPATH_MUST_BE_ABSOLUTE = "Can't resolve windows filepath to wsl path: Path must be an absolute windows path";
 exports.WRONG_POSIX_PATH_ROOT = "Linux path must reside in /mnt/";
-exports.parsePosixPath = function (linuxPath, mountPoints) {
+var parsePosixPath = function (linuxPath, mountPoints) {
     var mountPoint = mountPoints.find(function (_a) {
         var src = _a.src;
         return linuxPath.startsWith(src);
@@ -33,15 +37,17 @@ exports.parsePosixPath = function (linuxPath, mountPoints) {
     }
     return [mountPoint.src, linuxPath.substring(mountPoint.src.length)];
 };
-exports.parseWindowsPath = function (windowsPath, _) {
+exports.parsePosixPath = parsePosixPath;
+var parseWindowsPath = function (windowsPath, _) {
     try {
-        return exports.splitByPattern(/^(\w+:\\)(.*)$/gi, windowsPath);
+        return (0, exports.splitByPattern)(/^(\w+:\\)(.*)$/gi, windowsPath);
     }
     catch (e) {
         throw Error(exports.ERROR_FILEPATH_MUST_BE_ABSOLUTE);
     }
 };
-exports.splitByPattern = function (pattern, path) {
+exports.parseWindowsPath = parseWindowsPath;
+var splitByPattern = function (pattern, path) {
     var drivePattern = pattern.exec(path);
     if (!drivePattern) {
         throw Error("Pattern does not match");
@@ -49,6 +55,7 @@ exports.splitByPattern = function (pattern, path) {
     var _a = drivePattern.slice(1), driveLetter = _a[0], restOfPath = _a[1];
     return [driveLetter, restOfPath];
 };
+exports.splitByPattern = splitByPattern;
 function joinPath(basePath, restOfPath, isWindowsPath) {
     if (isWindowsPath === void 0) { isWindowsPath = false; }
     var platformPath = isWindowsPath ? path.win32 : path.posix;
