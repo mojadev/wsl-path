@@ -196,10 +196,10 @@ function mockProcessResult(
 ) {
   if (process.env.CALL_WSL_PROCESS) {
     (execSync as any).mockImplementation((_: string) =>
-      require.requireActual("child_process").execSync(_)
+      jest.requireActual("child_process").execSync(_)
     );
     (exec as any).mockImplementation((_: string, callback: ExecCallback) =>
-      require.requireActual("child_process").exec(_, callback)
+      jest.requireActual("child_process").exec(_, callback)
     );
     return;
   }

@@ -17,15 +17,15 @@
     "Path",
     "File system"
   ],
-  "author": "Jannis Moßhammer <mojadev@gmail.com>",
+  "author": "Jannis Gansen <mojadev@gmail.com>",
   "license": "MIT",
   "types": "./dist/index.d.ts",
   "devDependencies": {
-    "@types/jest": "^24.9.1",
-    "@types/node": "^12.12.54",
-    "jest": "^24.9.0",
-    "rimraf": "^2.7.1",
-    "ts-jest": "^26.3.0",
-    "typescript": "^3.9.7"
+    "@types/jest": "^29.2.4",
+    "@types/node": "^18.11.17",
+    "jest": "^29.3.1",
+    "rimraf": "^3.0.2",
+    "ts-jest": "^29.0.3",
+    "typescript": "^4.9.4"
   }
 }

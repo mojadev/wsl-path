@@ -7,6 +7,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
+
       - id: release
         uses: google-github-actions/release-please-action@v3
         with:
@@ -19,10 +20,11 @@ jobs:
           node-version: 16
           registry-url: 'https://registry.npmjs.org'
         if: ${{ steps.release.outputs.release_created }}
-      - run: npm install
-      - run: npm test
+      - run: yarn install
         if: ${{ steps.release.outputs.release_created }}
-      - run: npm publish
+      - run: yarn test
+        if: ${{ steps.release.outputs.release_created }}
+      - run: yarn publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
         if: ${{ steps.release.outputs.release_created }}
